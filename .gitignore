@@ -9,6 +9,8 @@ postgresql/data/*
 !postgresql/data/.gitkeep
 
 minio-persistence/.minio.sys/*
+minio-persistence/animals
+minio-persistence/results
 !minio-persistence/.minio.sys/config
 minio-persistence/.root_password
 minio-persistence/.root_user

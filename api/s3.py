@@ -1,9 +1,10 @@
 import aioboto3
-import os
+from .env_config import config
 
-ENDPOINT_URL = os.environ["MINIO_ENDPOINT_URL"]
-ACCESS_KEY = os.environ["ACCESS_KEY"]
-SECRET_KEY = os.environ['SECRET_KEY']
+# ENDPOINT_URL = 'http://minio:9000'
+ENDPOINT_URL = f'http://{config.s3_address}:9000'
+ACCESS_KEY = 'fcEPzXwRe9tAtUIjco0o'
+SECRET_KEY = 'Y85wp1asb1EwZsXhfCz73kWhuQYoO4le6dhXqRhO'
 BUCKET_NAME = 'animals'
 VERSION='s3v4'
 

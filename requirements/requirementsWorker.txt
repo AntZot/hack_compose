@@ -12,3 +12,8 @@ transformers
 aioboto3
 pydub
 unstructured
+opencv-python-headless
+pillow
+dill
+ultralytics==8.2.16
+lapx>=0.5.2

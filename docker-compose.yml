@@ -9,8 +9,8 @@ services:
       POSTGRES_PASSWORD: "admin"
       PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
-      - /home/hack/postgresql/sqlscript:/docker-entrypoint-initdb.d
-      - /home/hack/postgresql/data:/var/lib/postgresql/data
+      - ./postgresql/sqlscript:/docker-entrypoint-initdb.d
+      - ./postgresql/data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U admin -d hack"]
       interval: 10s
@@ -69,34 +69,6 @@ services:
       - "9000:9000"
       - "9001:9001"
 
-  yolo:
-    image: yolo-dock:1.1.1-ubuntu22.04-cuda
-    build: 
-      context: .
-      dockerfile: ./docker/Dockerfile.yolo
-    container_name: yolo-inference
-    restart: on-failure
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/yolo/health/live"]
-      interval: 30s
-      timeout: 20s
-      retries: 3
-    environment:
-      - WEIGHTS_PATH=./yolo/yolov8n.pt
-      - VIDEO_RESULT_PATH=/opt/project/data/result_video
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
-    networks:
-      default:
-        ipv4_address: 172.18.0.5
-    ports: 
-      - "5777:8080"
-
   api:
     image: backend:0.0.3
     container_name: api-deploy
@@ -124,19 +96,20 @@ services:
        default:
          ipv4_address: 172.18.0.6
     ports: 
-      - "8000:8000"
+      - "9080:9080"
 
-  # workwer:
-  #   image: worker:0.0.1
-  #   container_name: worker-deploy
-  #   build:
-  #     context: https://github.com/SakhnevichKirill/animals_classification_back.git
-  #     dockerfile: Dockerfiles/DockerfileWorker
-  #   # restart: unless-stopped
-  #   command: arq worker.config.WorkerSettings.WorkerSettings
-  #   depends_on:
-  #       redis:
-  #           condition: service_healthy
+  workwer:
+    image: worker:0.0.1
+    container_name: worker-deploy
+    build:
+      context: .
+      # context: https://github.com/SakhnevichKirill/animals_classification_back.git
+      dockerfile: docker/DockerfileWorker
+    # restart: unless-stopped
+    command: arq worker.config.WorkerSettings.WorkerSettings
+    depends_on:
+        redis:
+            condition: service_healthy
     
   frontend:
     image: front:0.1.2
@@ -144,15 +117,15 @@ services:
     build: https://github.com/HackRealityLab/grozniy-hack-front.git
     environment:
       MINIO_ENDPOINT_URL: http://172.18.0.4:9000
-    depends_on:
-      minio:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      postgres:
-        condition: service_healthy
-      yolo:
-        condition: service_healthy
+    # depends_on:
+      # minio:
+      #   condition: service_healthy
+      # redis:
+      #   condition: service_healthy
+      # postgres:
+      #   condition: service_healthy
+      # yolo:
+      #   condition: service_healthy
       # api:
       #   condition: service_healthy
     networks:
