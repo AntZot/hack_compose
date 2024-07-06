@@ -8,7 +8,10 @@
 postgresql/data/*
 !postgresql/data/.gitkeep
 
-minio-persistence/*
+minio-persistence/.minio.sys/*
+!minio-persistence/.minio.sys/config
+minio-persistence/.root_password
+minio-persistence/.root_user
 redis/
 
 __pycache__/

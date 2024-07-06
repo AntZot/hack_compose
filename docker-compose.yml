@@ -31,6 +31,7 @@ services:
 
   redis:
     image: redis:latest
+    container_name: redis-deploy
     restart: always
     volumes:
         - ./redis/data:/data
@@ -50,6 +51,7 @@ services:
   
   minio:
     image: bitnami/minio:latest
+    container_name: minio-deploy
     environment:
       MINIO_ROOT_USER: hack
       MINIO_ROOT_PASSWORD: minio123
@@ -75,7 +77,7 @@ services:
     container_name: yolo-inference
     restart: on-failure
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5777/yolo/health/live"]
+      test: ["CMD", "curl", "-f", "http://localhost:8080/yolo/health/live"]
       interval: 30s
       timeout: 20s
       retries: 3
@@ -95,12 +97,14 @@ services:
     ports: 
       - "5777:8080"
 
-  backend:
+  api:
     image: backend:0.0.3
-    container_name: backend-deploy
+    container_name: api-deploy
     build:
+      # context: https://github.com/SakhnevichKirill/animals_classification_back.git
+      # dockerfile: Dockerfiles/DockerfileApi
       context: .
-      dockerfile: ./docker/Dockerfile.back
+      dockerfile: docker/Dockerfile.back
     command: gunicorn --conf api/gunicorn_conf.py -b 0.0.0.0:9080 -k uvicorn.workers.UvicornWorker api.main:app
     environment:
       MINIO_ENDPOINT_URL: http://172.18.0.4:9000
@@ -122,21 +126,35 @@ services:
     ports: 
       - "8000:8000"
 
+  # workwer:
+  #   image: worker:0.0.1
+  #   container_name: worker-deploy
+  #   build:
+  #     context: https://github.com/SakhnevichKirill/animals_classification_back.git
+  #     dockerfile: Dockerfiles/DockerfileWorker
+  #   # restart: unless-stopped
+  #   command: arq worker.config.WorkerSettings.WorkerSettings
+  #   depends_on:
+  #       redis:
+  #           condition: service_healthy
+    
   frontend:
     image: front:0.1.2
     container_name: frontend-deploy
     build: https://github.com/HackRealityLab/grozniy-hack-front.git
     environment:
       MINIO_ENDPOINT_URL: http://172.18.0.4:9000
-    # depends_on:
-    #   redis:
-    #     condition: service_healthy
-    #   postgres:
-    #     condition: service_healthy
-    #   yolo:
-    #     condition: service_healthy
-    #   backend:
-    #     condition: service_healthy
+    depends_on:
+      minio:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      yolo:
+        condition: service_healthy
+      # api:
+      #   condition: service_healthy
     networks:
       default:
         ipv4_address: 172.18.0.7
