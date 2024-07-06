@@ -96,30 +96,38 @@ services:
       - "5777:8080"
 
   backend:
-    image: backend:0.0.0
+    image: backend:0.0.3
     container_name: backend-deploy
     build:
       context: .
       dockerfile: ./docker/Dockerfile.back
+    command: gunicorn --conf api/gunicorn_conf.py -b 0.0.0.0:9080 -k uvicorn.workers.UvicornWorker api.main:app
     environment:
-      MINIO_ENDPOINT_URL: http://172.18.0.27:9000
+      MINIO_ENDPOINT_URL: http://172.18.0.4:9000
+      ACCESS_KEY: 'fcEPzXwRe9tAtUIjco0o'
+      SECRET_KEY: 'Y85wp1asb1EwZsXhfCz73kWhuQYoO4le6dhXqRhO'
+      DATABASE_URL: postgresql+asyncpg://admin:admin@172.18.0.2/hack
     depends_on:
+      minio:
+        condition: service_healthy
       redis:
         condition: service_healthy
       postgres:
         condition: service_healthy
-      yolo:
-        condition: service_healthy
+      # yolo:
+      #   condition: service_healthy
     networks:
        default:
          ipv4_address: 172.18.0.6
+    ports: 
+      - "8000:8000"
 
   frontend:
     image: front:0.1.2
     container_name: frontend-deploy
     build: https://github.com/HackRealityLab/grozniy-hack-front.git
     environment:
-      MINIO_ENDPOINT_URL: http://172.18.0.27:9000
+      MINIO_ENDPOINT_URL: http://172.18.0.4:9000
     # depends_on:
     #   redis:
     #     condition: service_healthy

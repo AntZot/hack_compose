@@ -1,8 +1,9 @@
 import aioboto3
+import os
 
-ENDPOINT_URL = 'http://192.168.1.8:9000'
-ACCESS_KEY = 'abc123'
-SECRET_KEY = 'someSecretKey'
+ENDPOINT_URL = os.environ["MINIO_ENDPOINT_URL"]
+ACCESS_KEY = os.environ["ACCESS_KEY"]
+SECRET_KEY = os.environ['SECRET_KEY']
 BUCKET_NAME = 'animals'
 VERSION='s3v4'
 
@@ -35,6 +36,8 @@ class S3Client:
             s3_file = await obj.get()
             data = await s3_file['Body'].read()
             return data
+        
+        
             # async with aiofiles.open('local_filename', 'wb') as file:
             #     await file.write(data)
             

@@ -18,20 +18,21 @@ from sqlalchemy import (
     Enum,
     update,
 )
+from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql import func
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy.dialects.postgresql import JSON
-from sqlalchemy.orm import relationship, declarative_base
+from sqlalchemy.orm import relationship
 from fastapi_users.db import SQLAlchemyBaseUserTableUUID
 from fastapi_users import schemas
 import enum
-
+import os
 
 Base = declarative_base()
 
 # Асинхронный URL для PostgreSQL
-DATABASE_URL = "postgresql+asyncpg://admin:admin@172.18.0.26/hack"
-
+#DATABASE_URL = "postgresql+asyncpg://analyze_document:analyze_document@postgres/analyze_document"
+DATABASE_URL = os.environ['DATABASE_URL']
 engine = create_async_engine(
     DATABASE_URL,
     future=True,
@@ -159,8 +160,8 @@ async def get_session() -> AsyncGenerator[AsyncSession, Any]:
 async def get_user_db(session: AsyncSession = Depends(get_session)):
     yield SQLAlchemyUserDatabase(session, User)
 
-import asyncio
-asyncio.run(create_db_and_tables())
+
+
 
 
 ### User Table
