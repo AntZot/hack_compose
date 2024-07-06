@@ -1,0 +1,136 @@
+version: "1"
+services:
+  postgres:
+    image: postgres:12.19-alpine3.20
+    container_name: postgres-db
+    environment:
+      POSTGRES_DB: hack
+      POSTGRES_USER: "admin"
+      POSTGRES_PASSWORD: "admin"
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - /home/hack/postgresql/sqlscript:/docker-entrypoint-initdb.d
+      - /home/hack/postgresql/data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d hack"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 4G
+    networks:
+      default:
+        ipv4_address: 172.18.0.2
+    ports: 
+      - "5432:5432"
+
+  redis:
+    image: redis:latest
+    restart: always
+    volumes:
+        - ./redis/data:/data
+        - ./redis/redis.conf:/redis/redis.conf
+    healthcheck:
+        test: [ "CMD", "redis-cli", "ping" ]
+        interval: 10s
+        timeout: 3s
+        retries: 5
+        start_period: 1s
+    command: redis-server /redis/redis.conf
+    networks:
+      default:
+        ipv4_address: 172.18.0.3
+    ports:
+      - "6379:6379"
+  
+  minio:
+    image: bitnami/minio:latest
+    environment:
+      MINIO_ROOT_USER: hack
+      MINIO_ROOT_PASSWORD: minio123
+    volumes:
+      - /home/hack/data/minio-persistence:/bitnami/minio/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    networks:
+      default:
+        ipv4_address: 172.18.0.4
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+
+  yolo:
+    image: yolo-dock:1.1.0-ubuntu22.04-cuda
+    build: 
+      context: .
+      dockerfile: ./docker/Dockerfile.yolo
+    container_name: yolo-inference
+    restart: on-failure
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5777/yolo/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    environment:
+      - WEIGHTS_PATH=./yolo/yolov8n.pt
+      - VIDEO_RESULT_PATH=/opt/project/data/result_video
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    volumes:
+      - /home/hack/data:/opt/project/data
+    networks:
+      default:
+        ipv4_address: 172.18.0.5
+    ports: 
+      - "5777:8080"
+
+  backend:
+    image: backend:0.0.0
+    container_name: backend-deploy
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile.back
+    environment:
+      MINIO_ENDPOINT_URL: http://172.18.0.27:9000
+    depends_on:
+       - yolo
+       - postgres
+    networks:
+       default:
+         ipv4_address: 172.18.0.6
+
+  frontend:
+    image: front:0.1.1
+    container_name: frontend-deploy
+    depends_on:
+      - yolo
+      - postgres
+    networks:
+      default:
+        ipv4_address: 172.18.0.7
+    ports: 
+      - "3000:3000"
+
+networks:
+  default:
+    driver: bridge
+    ipam:
+     config:
+       - subnet: 172.18.0.0/24
+         gateway: 172.18.0.1
