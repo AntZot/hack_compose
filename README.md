@@ -1,2 +1,10 @@
-1) mkdir data/minio-persistence
-2) sudo chgrp docker /data/minio-persistence
+
+
+
+Предварительные настройки:
+1) MINIO
+```bash
+    mkdir minio-persistence
+    chmod -R 777 minio-persistence
+```
+2) Set up docker compose path variables!

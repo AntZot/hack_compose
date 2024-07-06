@@ -54,7 +54,7 @@ services:
       MINIO_ROOT_USER: hack
       MINIO_ROOT_PASSWORD: minio123
     volumes:
-      - /home/hack/data/minio-persistence:/bitnami/minio/data
+      - /home/hack/minio-persistence:/bitnami/minio/data
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
       interval: 30s
@@ -68,15 +68,12 @@ services:
       - "9001:9001"
 
   yolo:
-    image: yolo-dock:1.1.0-ubuntu22.04-cuda
+    image: yolo-dock:1.1.1-ubuntu22.04-cuda
     build: 
       context: .
       dockerfile: ./docker/Dockerfile.yolo
     container_name: yolo-inference
     restart: on-failure
-    depends_on:
-      postgres:
-        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5777/yolo/health/live"]
       interval: 30s
@@ -92,8 +89,6 @@ services:
             - driver: nvidia
               count: 1
               capabilities: [gpu]
-    volumes:
-      - /home/hack/data:/opt/project/data
     networks:
       default:
         ipv4_address: 172.18.0.5
@@ -109,18 +104,31 @@ services:
     environment:
       MINIO_ENDPOINT_URL: http://172.18.0.27:9000
     depends_on:
-       - yolo
-       - postgres
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      yolo:
+        condition: service_healthy
     networks:
        default:
          ipv4_address: 172.18.0.6
 
   frontend:
-    image: front:0.1.1
+    image: front:0.1.2
     container_name: frontend-deploy
-    depends_on:
-      - yolo
-      - postgres
+    build: https://github.com/HackRealityLab/grozniy-hack-front.git
+    environment:
+      MINIO_ENDPOINT_URL: http://172.18.0.27:9000
+    # depends_on:
+    #   redis:
+    #     condition: service_healthy
+    #   postgres:
+    #     condition: service_healthy
+    #   yolo:
+    #     condition: service_healthy
+    #   backend:
+    #     condition: service_healthy
     networks:
       default:
         ipv4_address: 172.18.0.7

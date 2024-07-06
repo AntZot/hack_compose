@@ -8,6 +8,9 @@
 postgresql/data/*
 !postgresql/data/.gitkeep
 
+minio-persistence/*
+redis/
+
 __pycache__/
 *.py[cod]
 *$py.class
