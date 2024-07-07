@@ -20,8 +20,7 @@ class Model:
     def __init__(
         self,
         class_mapping: dict[int, str] | None = None,
-        device: str = "cpu",
-        max_seq_len: int = 512,
+        device: str = "cpu"
     ):
         self.model = YOLO("./worker/models/yolo_detection/deepfaune-yolov8s_960.pt")
         self.device = device
@@ -30,7 +29,7 @@ class Model:
 
         self.s3_write_client = S3Client(bucket_name="results")
         
-    async def predict(self, archive_s3_path:ZipFile) -> str:
+    async def predict(self, archive_s3_path:ZipFile) -> dict:
         result_dict = {}
         with archive_s3_path as archive:
             for image in archive.namelist():
@@ -54,7 +53,7 @@ class Model:
                         'class': self.class_mapping[int(i[5])]
                     }
                     result.append(res_dict)
-                result_dict[image] = {'orig_image':res[0].plot().tolist(),"im_datetime":exif['DateTime'] ,'data':result}
+                result_dict[image] = {"im_datetime":exif['DateTime'] ,'data':result}
                 # Плотинг ббокса
                 _, buffer = cv2.imencode('.jpg', res[0].plot())
                 #Перевод в iobf

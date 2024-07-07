@@ -56,7 +56,7 @@ services:
       MINIO_ROOT_USER: hack
       MINIO_ROOT_PASSWORD: minio123
     volumes:
-      - /home/hack/minio-persistence:/bitnami/minio/data
+      - ./minio-persistence:/bitnami/minio/data
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
       interval: 30s
