@@ -42,7 +42,7 @@ class Model:
         max_seq_len: int = 512,
     ):
         self.model_name = "openai/clip-vit-large-patch14-336"
-        self.classifier = pipeline("zero-shot-image-classification", model = self.model_name)#.to("device")
+        self.classifier = pipeline("zero-shot-image-classification", model = self.model_name)
         self.class_mapping = class_mapping or self.class_mapping
 
         self.s3_write_client = S3Client(bucket_name="results")

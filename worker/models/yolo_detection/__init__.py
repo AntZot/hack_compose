@@ -52,8 +52,17 @@ class Model:
                         'conf': i[4],
                         'class': self.class_mapping[int(i[5])]
                     }
+                    
                     result.append(res_dict)
-                result_dict[image] = {"im_datetime":exif['DateTime'] ,'data':result}
+                if result != []:
+                    result_dict[image] = {"im_datetime":exif['DateTime'] ,'data':result}
+                else:
+                    result_dict[image] = {"im_datetime":exif['DateTime'] ,'data':[{
+                        'x1':0,
+                        'y1':0,
+                        'x2':5,
+                        'y2':5
+                    }]}
                 # Плотинг ббокса
                 _, buffer = cv2.imencode('.jpg', res[0].plot())
                 #Перевод в iobf
